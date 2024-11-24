@@ -123,9 +123,7 @@ function handlePedalData(data: Buffer): void {
     '\t',
     data[7],
     '\t',
-    data[8],
-    '\t',
-    data[9]
+    data[8]
   )
 }
 
