@@ -17,15 +17,16 @@ function App(): JSX.Element {
   useEffect(() => {
     // Set up IPC listener for pedal updates
     const pedalUpdateHandler = (_event: unknown, data: PedalData): void => {
+      console.log('Pedal data received:', data)
       setPedalData(data)
     }
 
     window.electron.ipcRenderer.on('pedal-update', pedalUpdateHandler)
 
-    return (): void => {
-      // Cleanup listener when component unmounts
-      window.electron.ipcRenderer.removeListener('pedal-update', pedalUpdateHandler)
-    }
+    // return (): void => {
+    //   // Cleanup listener when component unmounts
+    //   window.electron.ipcRenderer.removeListener('pedal-update', pedalUpdateHandler)
+    // }
   }, [])
 
   const handleActionChange = (event: React.ChangeEvent<HTMLSelectElement>): void => {
@@ -45,9 +46,9 @@ function App(): JSX.Element {
         <div className="pedal-value">
           <div
             className="pedal-value-inner"
-            style={{ width: `${(pedalData.accelerator * 100).toFixed(0)}%` }}
+            style={{ width: `${pedalData.accelerator.toFixed(0)}%` }}
           >
-            {(pedalData.accelerator * 100).toFixed(0)}%
+            {pedalData.accelerator.toFixed(0)}%
           </div>
         </div>
       </div>
@@ -57,9 +58,9 @@ function App(): JSX.Element {
         <div className="pedal-value">
           <div
             className="pedal-value-inner brake"
-            style={{ width: `${(pedalData.brake * 100).toFixed(0)}%` }}
+            style={{ width: `${pedalData.brake.toFixed(0)}%` }}
           >
-            {(pedalData.brake * 100).toFixed(0)}%
+            {pedalData.brake.toFixed(0)}%
           </div>
         </div>
       </div>
@@ -69,9 +70,9 @@ function App(): JSX.Element {
         <div className="pedal-value">
           <div
             className="pedal-value-inner clutch"
-            style={{ width: `${(pedalData.clutch * 100).toFixed(0)}%` }}
+            style={{ width: `${pedalData.clutch.toFixed(0)}%` }}
           >
-            {(pedalData.clutch * 100).toFixed(0)}%
+            {pedalData.clutch.toFixed(0)}%
           </div>
         </div>
       </div>

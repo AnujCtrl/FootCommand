@@ -5,60 +5,14 @@ import icon from '../../resources/icon.png?asset'
 import HID from 'node-hid'
 import robotjs from 'robotjs'
 
-interface PedalConfig {
-  action: 'keypress' | 'mouseScroll' | 'windowSwitch'
-  key?: string
-  direction?: 'up' | 'down'
-  threshold: number
-}
-
 interface PedalValues {
   accelerator: number
   brake: number
   clutch: number
 }
 
-interface Config {
-  accelerator: PedalConfig
-  brake: PedalConfig
-  clutch: PedalConfig
-}
-
-const DEFAULT_CONFIG: Config = {
-  accelerator: {
-    action: 'keypress',
-    key: 'w',
-    threshold: 0.2
-  },
-  brake: {
-    action: 'keypress',
-    key: 's',
-    threshold: 0.2
-  },
-  clutch: {
-    action: 'mouseScroll',
-    direction: 'up',
-    threshold: 0.3
-  }
-}
-
 let mainWindow: BrowserWindow | null = null
 let pedalDevice: HID.HID | null = null
-
-const actionHandlers = {
-  keypress: (key: string, isPressed: boolean): void => {
-    robotjs.keyToggle(key, isPressed ? 'down' : 'up')
-  },
-  mouseScroll: (direction: 'up' | 'down', value: number): void => {
-    const scrollAmount = direction === 'up' ? 5 : -5
-    robotjs.scrollMouse(0, Math.round(scrollAmount * value))
-  },
-  windowSwitch: (isPressed: boolean): void => {
-    if (isPressed) {
-      robotjs.keyTap('tab', 'alt')
-    }
-  }
-}
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -106,25 +60,23 @@ function initializePedalDevice(): void {
   }
 }
 function handlePedalData(data: Buffer): void {
-  console.log(
-    data[0],
-    '\t',
-    data[1],
-    '\t',
-    data[2],
-    '\t',
-    data[3],
-    '\t',
-    data[4],
-    '\t',
-    data[5],
-    '\t',
-    data[6],
-    '\t',
-    data[7],
-    '\t',
-    data[8]
-  )
+  // 5 = accelerator, 3 = brake, 7 = clutch
+  const pedalValues: PedalValues = {
+    accelerator: data[5] + data[6] * 255, // First pair
+    brake: data[3] + data[4] * 255, // Second pair
+    clutch: data[7] + data[8] * 255 // Third pair
+  }
+
+  // console.log('Raw Data:', {
+  //   accelerator: [data[5], data[6]],
+  //   brake: [data[3], data[4]],
+  //   clutch: [data[7], data[8]],
+  const normalized: PedalValues = {
+    accelerator: Math.round((pedalValues.accelerator / 1020) * 100),
+    brake: Math.round((pedalValues.brake / 1020) * 100),
+    clutch: Math.round((pedalValues.clutch / 1020) * 100)
+  }
+  mainWindow!.webContents.send('pedal-update', normalized)
 }
 
 app.whenReady().then(() => {
@@ -133,8 +85,6 @@ app.whenReady().then(() => {
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
-
-  ipcMain.on('ping', () => console.log('pong'))
 
   initializePedalDevice()
   createWindow()
